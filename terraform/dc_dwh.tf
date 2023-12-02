@@ -9,13 +9,7 @@ module "doublecloud_byoc" {
   providers = {
     aws = aws
   }
-  ipv4_cidr = var.vpc_cidr_block
-}
-
-# Create VPC to peer with
-resource "aws_vpc" "peered" {
-  cidr_block                       = var.dwh_ipv4_cidr
-  provider                         = aws
+  ipv4_cidr = var.dwh_ipv4_cidr
 }
 
 # Get account ID to peer with
@@ -33,7 +27,7 @@ resource "doublecloud_network" "aws" {
     vpc_id          = module.doublecloud_byoc.vpc_id
     account_id      = module.doublecloud_byoc.account_id
     iam_role_arn    = module.doublecloud_byoc.iam_role_arn
-    private_subnets = true
+    private_subnets = false
   }
 }
 
@@ -42,11 +36,11 @@ resource "doublecloud_network_connection" "example" {
   network_id = doublecloud_network.aws.id
   aws = {
     peering = {
-      vpc_id          = aws_vpc.peered.id
+      vpc_id          = aws_vpc.tutorial_vpc.id
       account_id      = data.aws_caller_identity.peered.account_id
       region_id       = var.aws_region
-      ipv4_cidr_block = aws_vpc.peered.cidr_block
-      ipv6_cidr_block = aws_vpc.peered.ipv6_cidr_block
+      ipv4_cidr_block = aws_vpc.tutorial_vpc.cidr_block
+      ipv6_cidr_block = aws_vpc.tutorial_vpc.ipv6_cidr_block
     }
   }
 }
@@ -68,9 +62,15 @@ resource "doublecloud_network_connection_accepter" "accept" {
 }
 
 # Create ipv4 routes to DoubleCloud Network
-resource "aws_route" "ipv4" {
+resource "aws_route" "ipv4_private_route" {
   provider                  = aws
-  route_table_id            = aws_vpc.peered.main_route_table_id
+  route_table_id            = aws_route_table.tutorial_private_rt.id
+  destination_cidr_block    = doublecloud_network_connection.example.aws.peering.managed_ipv4_cidr_block
+  vpc_peering_connection_id = time_sleep.avoid_aws_race.triggers["peering_connection_id"]
+}
+resource "aws_route" "ipv4_public_route" {
+  provider                  = aws
+  route_table_id            = aws_route_table.tutorial_public_rt.id
   destination_cidr_block    = doublecloud_network_connection.example.aws.peering.managed_ipv4_cidr_block
   vpc_peering_connection_id = time_sleep.avoid_aws_race.triggers["peering_connection_id"]
 }
@@ -84,3 +84,48 @@ resource "time_sleep" "avoid_aws_race" {
   }
 }
 
+## Actual Clickhouse DB
+
+resource "doublecloud_clickhouse_cluster" "alpha-clickhouse" {
+  project_id = var.dc_project_id
+  name       = "alpha-clickhouse"
+  region_id  = var.aws_region
+  cloud_type = "aws"
+  network_id = doublecloud_network.aws.id
+
+  resources {
+    clickhouse {
+      resource_preset_id = "s1-c2-m4"
+      disk_size          = 34359738368
+      replica_count      = 1
+    }
+  }
+
+  config {
+    log_level       = "LOG_LEVEL_TRACE"
+    max_connections = 120
+  }
+
+  access {
+    ipv4_cidr_blocks = [
+      {
+        value       = doublecloud_network.aws.ipv4_cidr_block
+        description = "DC Network interconnection"
+      },
+      {
+        value       = aws_vpc.tutorial_vpc.cidr_block
+        description = "Peered VPC"
+      },
+      {
+        value       = "${var.my_ip}/32"
+        description = "My IP"
+      }
+    ]
+    ipv6_cidr_blocks = [
+      {
+        value       = "${var.my_ipv6}/128"
+        description = "My IPv6"
+      }
+    ]
+  }
+}

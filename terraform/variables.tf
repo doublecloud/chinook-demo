@@ -84,6 +84,14 @@ variable "my_ip" {
   type        = string
   sensitive   = true
 }
+// This variable contains your IP address. This
+// is used when setting up the SSH rule on the
+// web security group
+variable "my_ipv6" {
+  description = "Your IPv6 address"
+  type        = string
+  sensitive   = true
+}
 
 // This variable contains the database master user
 // We will be storing this in a secrets file

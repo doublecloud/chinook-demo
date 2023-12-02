@@ -2,6 +2,8 @@
 
 Sample terraform application for client-facing analytics.
 
+# Stage 1: Exist infra 
+
 Basic application infrastructure looks as follows:
 
 ![stage1.png](diagrams%2Fstage1.png)
@@ -27,7 +29,13 @@ Final goal is extract data from private Postgresql, to feed postgresql with test
 
 # Stage 2: Create and connect with Data VPC
 
-![stage1.png](diagrams/stage2.png)
+![stage2.png](diagrams/stage2.png)
 
 First thing first - connectivity. For that we need to connect double-cloud via [BYOA](https://double.cloud/docs/en/vpc/connect-dc-to-aws)
+
+# Stage 3: Add Clickhouse in Data VPC
+
+Once we establish connectivity bridge we can introduce private DWH instance ([Clickhouse](https://double.cloud/services/managed-clickhouse/))
+
+![stage3.png](diagrams/stage3.png)
 
