@@ -100,3 +100,15 @@ variable "db_password" {
   type        = string
   sensitive   = true
 }
+
+// Stage 2 Variables
+
+variable "dwh_ipv4_cidr" {
+  type        = string
+  description = "CIDR of a used vpc"
+  default     = "172.16.0.0/16"
+}
+variable "dc_project_id" {
+  type        = string
+  description = "ID of the DoubleCloud project in which to create resources"
+}

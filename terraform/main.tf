@@ -6,7 +6,14 @@ terraform {
     // is aws, and we want version 4.0.0
     aws = {
       source  = "hashicorp/aws"
-      version = "4.0.0"
+      version = "4.51.0"
+    }
+    time = {
+      source = "hashicorp/time"
+    }
+    doublecloud = {
+      source  = "registry.terraform.io/doublecloud/doublecloud"
+      version = ">= 0.1.6"
     }
   }
 
@@ -19,6 +26,11 @@ terraform {
 // our variable "aws_region"
 provider "aws" {
   region = var.aws_region
+}
+
+provider "doublecloud" {
+  # See https://double.cloud/docs/en/public-api/tutorials/transfer-api-quickstart on how to obtain this file
+  authorized_key = file("~/.config/dc_tf_sample_key.json")
 }
 
 // This data object is going to be
