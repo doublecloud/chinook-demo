@@ -154,15 +154,17 @@ resource "aws_subnet" "tutorial_private_subnet" {
 resource "aws_route_table" "tutorial_public_rt" {
   // Put the route table in the "tutorial_vpc" VPC
   vpc_id = aws_vpc.tutorial_vpc.id
+}
 
-  // Since this is the public route table, it will need
-  // access to the internet. So we are adding a route with
-  // a destination of 0.0.0.0/0 and targeting the Internet
-  // Gateway "tutorial_igw"
-  route {
-    cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.tutorial_igw.id
-  }
+// Since this is the public route table, it will need
+// access to the internet. So we are adding a route with
+// a destination of 0.0.0.0/0 and targeting the Internet
+// Gateway "tutorial_igw"
+resource "aws_route" "tutorial_public_rt_igw" {
+  provider               = aws
+  route_table_id         = aws_route_table.tutorial_public_rt.id
+  destination_cidr_block = "0.0.0.0/0"
+  gateway_id             = aws_internet_gateway.tutorial_igw.id
 }
 
 // Here we are going to add the public subnets to the
@@ -281,6 +283,15 @@ resource "aws_security_group" "tutorial_db_sg" {
     to_port         = "5432"
     protocol        = "tcp"
     security_groups = [aws_security_group.tutorial_web_sg.id]
+  }
+
+  // So we have VPC in DC and we need to allow it to Postgres
+  ingress {
+    description     = "Allow Postgresql traffic from Data Network"
+    from_port       = "5432"
+    to_port         = "5432"
+    protocol        = "tcp"
+    cidr_blocks     = [var.dwh_ipv4_cidr]
   }
 
   // Here we are tagging the SG with the name "tutorial_db_sg"
