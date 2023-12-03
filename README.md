@@ -44,3 +44,9 @@ Once we establish connectivity bridge we can introduce private DWH instance ([Cl
 Once we have a cluster, we need to get some data. To make it possible we will create a transfer from exist postgres to this clickhouse.
 
 ![stage4.png](diagrams/stage4.png)
+
+# Stage 5: Expose Clickhouse via Dashboard
+
+Finally, we have all data in clickhouse, last step is here: Expose it via Dashboard
+
+![stage5.png](diagrams/stage5.png)

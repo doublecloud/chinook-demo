@@ -107,6 +107,7 @@ resource "doublecloud_clickhouse_cluster" "alpha-clickhouse" {
   }
 
   access {
+    data_services    = ["visualization"]
     ipv4_cidr_blocks = [
       {
         value       = doublecloud_network.aws.ipv4_cidr_block
